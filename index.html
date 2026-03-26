@@ -9,6 +9,9 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        
+        /* Animasi tambahan untuk progress bar agar halus */
+        #progressBar { transition: width 0.1s linear; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -161,19 +164,105 @@
         </div>
     </section>
 
+    <div class="fixed bottom-6 left-6 z-50 flex items-center gap-3 bg-white/90 backdrop-blur-md p-2 pr-4 rounded-full shadow-xl border border-slate-200 transition-all hover:shadow-2xl">
+        <button id="musicControl" class="w-10 h-10 flex items-center justify-center bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-transform active:scale-95">
+            <i id="musicIcon" class="fas fa-play ml-0.5"></i>
+        </button>
+
+        <div class="flex flex-col w-28 md:w-36">
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight">YouTube Audio</span>
+            <span class="text-[11px] font-semibold text-slate-800 truncate mb-1" id="trackTitle">Loading...</span>
+            <div class="h-1 w-full bg-slate-200 rounded-full overflow-hidden cursor-pointer" id="progressContainer">
+                <div id="progressBar" class="h-full bg-blue-500 w-0 transition-all duration-100"></div>
+            </div>
+        </div>
+
+        <div id="yt-player" class="hidden"></div>
+    </div>
+
     <footer class="py-12 border-t border-slate-200">
         <div class="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
             <p class="text-slate-500 text-sm">©Yohanes Vianney Diastriutomo. All rights reserved.</p>
             <div class="flex gap-6 text-xl text-slate-400">
-                <a href="mailto:yoviedias@gmail.com" class="hover:text-blue-600 transition" title="Email"><i class="fas fa-envelope"></i></a>
-                <a href="https://wa.me/6287736338534" target="_blank" class="hover:text-green-500 transition" title="Whatsapp"><i class="fab fa-whatsapp"></i></a>    
+                <a href="mailto:yoviedias@gmail.com" class="hover:text-blue-600 transition transform hover:scale-110" title="Email"><i class="fas fa-envelope"></i></a>
+                <a href="https://wa.me/6287736338534" target="_blank" class="hover:text-green-500 transition transform hover:scale-110" title="Whatsapp"><i class="fab fa-whatsapp"></i></a>    
                 <a href="https://github.com/Dyzz4you" target="_blank" class="text-slate-500 hover:text-black transition duration-300 transform hover:scale-110" title="Github"><i class="fab fa-github"></i></a>
-                <a href="https://www.instagram.com/yohanes_dias?igsh=MXh1aHhiMWsydzRlaA==" target="_blank" class="text-slate-500 hover:text-pink-500 transition duration-300" title="Instagram"><i class="fab fa-instagram"></i></a>
-                <a href="https://tiktok.com/@dyzz4u" target="_blank" class="text-slate-500 hover:text-cyan-400 transition duration-300" title="TikTok"> <i class="fab fa-tiktok"></i></a>
-                <a href="https://lynk.id/dfordyzz" target="_blank" class="text-slate-500 hover:text-purple-500 transition duration-300" title="Lynk.id"><i class="fas fa-link"></i></a>
+                <a href="https://www.instagram.com/yohanes_dias?igsh=MXh1aHhiMWsydzRlaA==" target="_blank" class="text-slate-500 hover:text-pink-500 transition duration-300 transform hover:scale-110" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://tiktok.com/@dyzz4u" target="_blank" class="text-slate-500 hover:text-cyan-400 transition duration-300 transform hover:scale-110" title="TikTok"> <i class="fab fa-tiktok"></i></a>
+                <a href="https://lynk.id/dfordyzz" target="_blank" class="text-slate-500 hover:text-purple-500 transition duration-300 transform hover:scale-110" title="Lynk.id"><i class="fas fa-link"></i></a>
             </div>
         </div>
     </footer>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let player;
+        const musicControl = document.getElementById('musicControl');
+        const musicIcon = document.getElementById('musicIcon');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const trackTitle = document.getElementById('trackTitle');
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('yt-player', {
+                height: '0',
+                width: '0',
+                videoId: 'KAQiJohcN0E',
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 0,
+                    'disablekb': 1,
+                    'rel': 0
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            trackTitle.innerText = event.target.getVideoData().title || "YouTube Music";
+            player.setVolume(30);
+        }
+
+        musicControl.addEventListener('click', () => {
+            const state = player.getPlayerState();
+            if (state === YT.PlayerState.PLAYING) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        });
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                musicIcon.classList.replace('fa-play', 'fa-pause');
+                musicIcon.classList.remove('ml-0.5');
+                startProgressUpdate();
+            } else {
+                musicIcon.classList.replace('fa-pause', 'fa-play');
+                musicIcon.classList.add('ml-0.5');
+            }
+        }
+        function startProgressUpdate() {
+            setInterval(() => {
+                if (player && player.getPlayerState() === YT.PlayerState.PLAYING) {
+                    const currentTime = player.getCurrentTime();
+                    const duration = player.getDuration();
+                    const progressPercent = (currentTime / duration) * 100;
+                    progressBar.style.width = `${progressPercent}%`;
+                }
+            }, 500);
+        }
+        progressContainer.addEventListener('click', (e) => {
+            const width = progressContainer.clientWidth;
+            const clickX = e.offsetX;
+            const duration = player.getDuration();
+            const seekTo = (clickX / width) * duration;
+            player.seekTo(seekTo, true);
+        });
+    </script>
 
 </body>
 </html>
